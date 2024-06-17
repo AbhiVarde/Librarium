@@ -1,5 +1,8 @@
 # Librarium: Your Personal Book Management Solution 🚀
-A Full-stack book management app. Built with [React](https://react.dev/), [MUI](https://mui.com/), [Node.js](https://nodejs.org/), and [Express](https://expressjs.com/). Supports Google and Discord login.
+
+- A Full-stack book management app. 
+- Built with [React](https://react.dev/), [MUI](https://mui.com/), [Node.js](https://nodejs.org/), and [Express](https://expressjs.com/). 
+- Supports Google and Discord login.
 
 ## Screenshots
 **Home Page**
