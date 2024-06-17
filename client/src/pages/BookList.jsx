@@ -18,9 +18,17 @@ import {
   Dialog,
   DialogContent,
   Snackbar,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import axios from "axios";
-import { LuChevronLeft, LuPlus, LuImage } from "react-icons/lu";
+import {
+  LuSearch,
+  LuChevronLeft,
+  LuPlus,
+  LuImage,
+  LuFilter,
+} from "react-icons/lu";
 import { HiMiniRectangleStack } from "react-icons/hi2";
 import { MdEdit, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
@@ -52,6 +60,7 @@ const BookList = () => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
   const [booklist, setBooklist] = useState(null);
   const [isFetching, setIsFetching] = useState(true);
   const [isOpenDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -64,7 +73,9 @@ const BookList = () => {
 
   const fetchBooks = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/books");
+      const response = await axios.get(
+        `http://localhost:5000/books?search=${search}`
+      );
       setBooklist(response?.data);
     } catch (error) {
       console.error("Error fetching books:", error);
@@ -201,7 +212,7 @@ const BookList = () => {
 
   useEffect(() => {
     fetchBooks();
-  }, []);
+  }, [search]);
 
   useEffect(() => {
     const accessToken = localStorage.getItem("accessToken");
@@ -231,6 +242,8 @@ const BookList = () => {
           setError("Error fetching user data");
           setIsLoading(false);
         });
+    } else {
+      navigate("/");
     }
   }, []);
 
@@ -354,7 +367,7 @@ const BookList = () => {
                   boxShadow: "0px 0px 20px 0px #00000012",
                 }}
               />
-              <CardContent sx={{ my: 2 }}>
+              <CardContent sx={{ my: 2, width: "100%" }}>
                 {isFetching ? (
                   <CircularProgress color="inherit" />
                 ) : booklist && booklist?.length > 0 ? (
@@ -369,8 +382,23 @@ const BookList = () => {
                           lg: "row",
                         },
                         gap: "20px",
+                        mb: 2,
                       }}
                     >
+                      <TextField
+                        fullWidth
+                        placeholder="Search by title or author"
+                        InputProps={{
+                          startAdornment: (
+                            <LuSearch
+                              size={20}
+                              color="rgba(0, 0, 0, 0.4)"
+                              style={{ marginRight: "10px" }}
+                            />
+                          ),
+                        }}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
                       <Box
                         sx={{
                           display: "flex",
@@ -384,6 +412,7 @@ const BookList = () => {
                         }}
                       >
                         <Button
+                          variant="contained"
                           onClick={handleAddBook}
                           sx={{
                             display: "flex",
@@ -397,7 +426,6 @@ const BookList = () => {
                             },
                             borderRadius: 2,
                             px: 2,
-                            mb: 2,
                             fontSize: 12,
                           }}
                         >
@@ -616,7 +644,6 @@ const BookList = () => {
       >
         <DialogContent>
           <form onSubmit={formik.handleSubmit}>
-            {console.log(formik.errors)}
             <Box>
               <InputLabel htmlFor="imageLink">
                 Image
