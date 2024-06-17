@@ -15,16 +15,6 @@ const CallbackPage = () => {
       let tokenUrl, tokenBody;
 
       switch (provider) {
-        // case "github":
-        //   tokenUrl = "https://github.com/login/oauth/access_token";
-        //   tokenBody = {
-        //     client_id: process.env.REACT_APP_GITHUB_CLIENT_ID,
-        //     client_secret: process.env.REACT_APP_GITHUB_CLIENT_SECRET,
-        //     code,
-        //     grant_type: "authorization_code",
-        //     redirect_uri: `${window.location.origin}/auth/callback/${provider}`,
-        //   };
-        //   break;
         case "google":
           tokenUrl = "https://accounts.google.com/o/oauth2/token";
           tokenBody = {
@@ -45,16 +35,6 @@ const CallbackPage = () => {
             grant_type: "authorization_code",
             redirect_uri: `${window.location.origin}/auth/callback/${provider}`,
             scope: "identify email",
-          };
-          break;
-        case "facebook":
-          tokenUrl = "https://graph.facebook.com/v15.0/oauth/access_token";
-          tokenBody = {
-            client_id: process.env.REACT_APP_FACEBOOK_CLIENT_ID,
-            client_secret: process.env.REACT_APP_FACEBOOK_CLIENT_SECRET,
-            code,
-            grant_type: "authorization_code",
-            redirect_uri: `https://localhost:3000/auth/callback/${provider}`,
           };
           break;
         default:
