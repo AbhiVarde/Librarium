@@ -3,6 +3,7 @@
 - A Full-stack book management app. 
 - Built with [React](https://react.dev/), [MUI](https://mui.com/), [Node.js](https://nodejs.org/), and [Express](https://expressjs.com/). 
 - Supports Google and Discord login.
+- Includes search functionality to easily find books.
 
 ## Screenshots
 **Login Page**
@@ -13,25 +14,25 @@
 
 **Home Page**
 
-<img width="1294" alt="Home" src="https://github.com/AbhiVarde/Librarium/assets/91776428/46805acf-8515-4dfd-bb6a-67858f2e4982">
+<img width="1295" alt="Screenshot 2024-06-17 at 9 37 28 PM" src="https://github.com/AbhiVarde/Librarium/assets/91776428/169b5d43-5cd0-410a-af58-b3c52d426a6a">
 
 ---
 
 **Add Book**
 
-<img width="1299" alt="Add" src="https://github.com/AbhiVarde/Librarium/assets/91776428/4c794250-5748-4675-8e08-421a338c65b6">
+<img width="1199" alt="Screenshot 2024-06-17 at 9 37 53 PM" src="https://github.com/AbhiVarde/Librarium/assets/91776428/f67067de-d35e-4517-83da-6cfa3342ab56">
 
 ---
 
 **Edit Book**
 
-<img width="1316" alt="Edit" src="https://github.com/AbhiVarde/Librarium/assets/91776428/5afed87e-ab45-4419-ae0f-2e650daa7c04">
+<img width="1217" alt="Screenshot 2024-06-17 at 9 38 16 PM" src="https://github.com/AbhiVarde/Librarium/assets/91776428/3d0e284b-fb4b-475b-9865-73679f445359">
 
 ---
 
 **Delete Book**
 
-<img width="1254" alt="Delete" src="https://github.com/AbhiVarde/Librarium/assets/91776428/84835a37-9159-4e53-9e1b-7187f4d22d35">
+<img width="1219" alt="Screenshot 2024-06-17 at 9 38 35 PM" src="https://github.com/AbhiVarde/Librarium/assets/91776428/2947726f-f5b1-453c-8a83-f0bb1c445ed0">
 
 ---
 
