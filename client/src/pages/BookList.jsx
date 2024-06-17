@@ -214,9 +214,7 @@ const BookList = () => {
         Authorization: `Bearer ${accessToken}`,
       };
 
-      if (provider === "github") {
-        apiUrl = "https://api.github.com/user";
-      } else if (provider === "google") {
+      if (provider === "google") {
         apiUrl = "https://www.googleapis.com/oauth2/v2/userinfo";
       } else if (provider === "discord") {
         apiUrl = "https://discord.com/api/users/@me";
