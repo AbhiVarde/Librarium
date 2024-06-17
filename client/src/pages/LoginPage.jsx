@@ -6,19 +6,10 @@ import { HiMiniRectangleStack } from "react-icons/hi2";
 
 const LoginPage = () => {
   const handleLogin = (provider) => {
-    let client_id, scope, facebook_redirect_uri;
+    let client_id, scope;
     let redirect_uri = `${window.location.origin}/auth/callback/${provider}`;
 
-    if (provider === "facebook") {
-      client_id = process.env.REACT_APP_FACEBOOK_CLIENT_ID;
-      scope = "public_profile,email";
-      facebook_redirect_uri = `https://localhost:3000/auth/callback/facebook`;
-      window.location.href = `https://${provider}.com/dialog/oauth?client_id=${client_id}&redirect_uri=${facebook_redirect_uri}&scope=${scope}&response_type=code`;
-    } else if (provider === "github") {
-      client_id = process.env.REACT_APP_GITHUB_CLIENT_ID;
-      scope = "user";
-      window.location.href = `https://${provider}.com/login/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&response_type=code`;
-    } else if (provider === "google") {
+    if (provider === "google") {
       client_id = process.env.REACT_APP_GOOGLE_CLIENT_ID;
       scope = "openid profile email";
       window.location.href = `https://accounts.${provider}.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}&response_type=code`;
@@ -84,40 +75,6 @@ const LoginPage = () => {
           >
             Sign in with Google
           </Button>
-          {/* <Button
-            fullWidth
-            variant="contained"
-            startIcon={<FaApple size="30" />}
-            onClick={() => handleLogin("apple")}
-            sx={{
-              fontSize: "15px",
-              fontWeight: 500,
-              backgroundColor: "white",
-              color: "black",
-              "&:hover": {
-                backgroundColor: "white",
-              },
-            }}
-          >
-            Sign in with Apple
-          </Button> */}
-          {/* <Button
-            fullWidth
-            variant="contained"
-            startIcon={<FaGithub size="28" />}
-            onClick={() => handleLogin("github")}
-            sx={{
-              fontSize: "15px",
-              fontWeight: 500,
-              backgroundColor: "white",
-              color: "black",
-              "&:hover": {
-                backgroundColor: "white",
-              },
-            }}
-          >
-            Sign in with GitHub
-          </Button> */}
           <Button
             fullWidth
             variant="contained"
@@ -135,23 +92,6 @@ const LoginPage = () => {
           >
             Sign in with Discord
           </Button>
-          {/* <Button
-            fullWidth
-            variant="contained"
-            startIcon={<FaFacebook size="26" style={{ fill: "#3b5998" }} />}
-            onClick={() => handleLogin("facebook")}
-            sx={{
-              fontSize: "15px",
-              fontWeight: 500,
-              backgroundColor: "white",
-              color: "black",
-              "&:hover": {
-                backgroundColor: "white",
-              },
-            }}
-          >
-            Sign in with Facebook
-          </Button> */}
         </Box>
       </Card>
     </Container>
