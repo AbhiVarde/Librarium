@@ -3,3 +3,14 @@
 * {
   font-family: "Montserrat", sans-serif !important;
 }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.css-1o9s3wi-MuiInputBase-input-MuiOutlinedInput-input {
+  padding: 0px !important;
+  height: 45px !important;
+}
