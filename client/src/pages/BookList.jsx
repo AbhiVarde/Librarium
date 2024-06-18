@@ -6,7 +6,9 @@ import {
   TextField,
   CircularProgress,
   Card,
+  CardMedia,
   CardContent,
+  CardActionArea,
   Avatar,
   Grid,
   Divider,
@@ -18,30 +20,29 @@ import {
   Dialog,
   DialogContent,
   Snackbar,
+  Pagination,
+  PaginationItem,
+  IconButton,
   Menu,
   MenuItem,
 } from "@mui/material";
 import axios from "axios";
-import {
-  LuSearch,
-  LuChevronLeft,
-  LuPlus,
-  LuImage,
-  LuFilter,
-} from "react-icons/lu";
+import { LuSearch, LuChevronLeft, LuPlus, LuImage } from "react-icons/lu";
 import { HiMiniRectangleStack } from "react-icons/hi2";
 import { MdEdit, MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { LoadingButton } from "@mui/lab";
 import { enqueueSnackbar } from "notistack";
-import { useFormik } from "formik";
+import { useFormik, Formik, Form, Field } from "formik";
 import * as yup from "yup";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { ConstructionOutlined } from "@mui/icons-material";
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const validationSchema = yup.object({
+const editFormikValidationSchema = yup.object({
   imageLink: yup.mixed().required("* Image is required"),
   title: yup
     .string()
@@ -70,13 +71,39 @@ const BookList = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const ImageFilesType = ["image/png", "image/jpg", "image/jpeg"];
+  const [page, setPage] = useState(1);
+  const [metadata, setMetaData] = useState();
+  const [anchorElMenu, setAnchorElMenu] = useState(null);
+  const [bookDetailsId, setBookDetailsId] = useState(null);
+  const [bookDetails, setBookDetails] = useState();
+  const [editMode, setEditMode] = useState(false);
+
+  const handleEditMenu = (e) => {
+    setEditMode(true);
+    setAnchorElMenu(null);
+  };
+
+  const handleMenu = (event) => {
+    setAnchorElMenu(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorElMenu(null);
+  };
 
   const fetchBooks = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/books?search=${search}`
+        `http://localhost:5000/books?search=${search}&page=${page}&limit=6`
       );
-      setBooklist(response?.data);
+      if (response?.status === 200 || response?.status === 201) {
+        if (response.data.data.length === 0 && metadata.currentPage > 1) {
+          setPage(1);
+        } else {
+          setBooklist(response?.data?.data);
+          setMetaData(response?.data?.metadata);
+        }
+      }
     } catch (error) {
       console.error("Error fetching books:", error);
     } finally {
@@ -88,21 +115,21 @@ const BookList = () => {
     setOpenAddDialog(true);
     setSelectedId(null);
     setSelectedImage(null);
-    formik.resetForm();
+    editformik.resetForm();
   };
 
   const handleCloseAddDialog = () => {
     setOpenAddDialog(false);
-    formik.resetForm();
+    editformik.resetForm();
   };
 
-  const formik = useFormik({
+  const editformik = useFormik({
     initialValues: {
       imageLink: "",
       title: "",
       author: "",
     },
-    validationSchema: validationSchema,
+    validationSchema: editFormikValidationSchema,
     onSubmit: async (values) => {
       const formData = new FormData();
       formData.append("title", values.title.trim());
@@ -142,7 +169,8 @@ const BookList = () => {
     },
   });
 
-  const handleEditBook = async (id) => {
+  const handleEditBook = async (e, id) => {
+    e.stopPropagation();
     setOpenAddDialog(true);
     setSelectedId(id);
 
@@ -156,8 +184,8 @@ const BookList = () => {
 
       setSelectedImage(imageLink);
 
-      formik.setValues({
-        ...formik.values,
+      editformik.setValues({
+        ...editformik.values,
         imageLink: imageLink,
         title: data?.title,
         author: data?.author,
@@ -169,9 +197,11 @@ const BookList = () => {
     }
   };
 
-  const handleDeleteBook = (id) => {
+  const handleDeleteBook = (e, id) => {
+    e.stopPropagation();
     setOpenDeleteDialog(true);
     setSelectedId(id);
+    setAnchorElMenu(null);
   };
 
   const handleCloseDeleteDialog = () => {
@@ -187,6 +217,9 @@ const BookList = () => {
         enqueueSnackbar(resource?.data?.message);
         handleCloseDeleteDialog();
         fetchBooks();
+        if (bookDetailsId) {
+          setBookDetailsId(null);
+        }
       })
       .catch((error) => {
         setIsSubmitting(false);
@@ -202,7 +235,7 @@ const BookList = () => {
       return;
     }
 
-    formik.setFieldValue("imageLink", selectedFile);
+    editformik.setFieldValue("imageLink", selectedFile);
     setSelectedImage(selectedFile);
   };
 
@@ -212,7 +245,7 @@ const BookList = () => {
 
   useEffect(() => {
     fetchBooks();
-  }, [search]);
+  }, [page, search]);
 
   useEffect(() => {
     const accessToken = localStorage.getItem("accessToken");
@@ -246,6 +279,454 @@ const BookList = () => {
       navigate("/");
     }
   }, []);
+
+  const handleBookDetails = async (id) => {
+    setBookDetailsId(id);
+    setIsFetching(true);
+
+    try {
+      const response = await axios.get(`http://localhost:5000/books/${id}`);
+      setBookDetails(response?.data);
+    } catch (error) {
+      console.error("Error fetching book:", error);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const initialValues = {
+    country: bookDetails?.country || "",
+    language: bookDetails?.language || "",
+    pages: bookDetails?.pages || "",
+    year: bookDetails?.year || "",
+  };
+
+  const validationSchema = yup.object().shape({
+    country: yup.string().required("* Country is required"),
+    language: yup.string().required("* Language is required"),
+    pages: yup
+      .number()
+      .positive("* Pages must be a positive number")
+      .required("* Pages is required"),
+    year: yup
+      .number()
+      .positive("* Year must be a positive number")
+      .required("* Year is required"),
+  });
+
+  const handleSubmit = (values, actions) => {
+    axios
+      .put(`http://localhost:5000/books/${bookDetailsId}`, values)
+      .then((response) => {
+        enqueueSnackbar(response.data.message);
+        setBookDetails((prevBookDetails) => ({
+          ...prevBookDetails,
+          ...values,
+        }));
+        setEditMode(false);
+      })
+      .catch((error) => {
+        console.error("There was an error submitting the form:", error);
+      })
+      .finally(() => {
+        actions.setSubmitting(false);
+      });
+  };
+
+  const renderBookDetails = () => {
+    if (bookDetailsId) {
+      return (
+        <CardContent sx={{ my: 2, width: "100%" }}>
+          {isFetching ? (
+            <CircularProgress color="inherit" />
+          ) : (
+            <Fragment>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "20px",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6">Book Details</Typography>
+                <IconButton
+                  sx={{ margin: "0px !important", padding: "4px !important" }}
+                  onClick={(e) => handleMenu(e)}
+                >
+                  <BsThreeDotsVertical />
+                </IconButton>
+              </Box>
+              <Card
+                sx={{
+                  mx: { xs: 2, md: 4 },
+                  display: "flex",
+                  flexDirection: "column",
+                  borderRadius: 2,
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  image={bookDetails?.imageLink}
+                  alt={bookDetails?.title}
+                  sx={{ width: "100%", height: "300px", mb: 2 }}
+                />
+                <CardContent>
+                  <Typography variant="h5" fontWeight={500}>
+                    {bookDetails?.title}
+                  </Typography>
+                  <Typography variant="h6" mb={2} gutterBottom>
+                    By {bookDetails?.author}
+                  </Typography>
+                  <Divider />
+                  <Formik
+                    initialValues={initialValues}
+                    validationSchema={validationSchema}
+                    onSubmit={handleSubmit}
+                    enableReinitialize
+                  >
+                    {({ errors, touched, isSubmitting }) => (
+                      <Form
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: editMode ? "20px" : "10px",
+                          marginTop: editMode ? "40px" : "20px",
+                        }}
+                      >
+                        {[
+                          { label: "Country", name: "country", type: "text" },
+                          { label: "Language", name: "language", type: "text" },
+                          { label: "Pages", name: "pages", type: "number" },
+                          { label: "Year", name: "year", type: "number" },
+                        ].map((field) => (
+                          <Grid
+                            container
+                            spacing={1}
+                            key={field.name}
+                            alignItems="center"
+                          >
+                            <Grid item xs={3}>
+                              <Typography variant="body1" fontWeight={600}>
+                                {field.label}:
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={9}>
+                              {!editMode ? (
+                                <Typography variant="body1" fontWeight={400}>
+                                  {bookDetails?.[field.name]}
+                                </Typography>
+                              ) : (
+                                <Field
+                                  name={field.name}
+                                  type={field.type}
+                                  as={TextField}
+                                  fullWidth
+                                  error={
+                                    touched[field.name] && !!errors[field.name]
+                                  }
+                                  helperText={
+                                    touched[field.name] && errors[field.name]
+                                  }
+                                />
+                              )}
+                            </Grid>
+                          </Grid>
+                        ))}
+                        {editMode && (
+                          <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                            variant="contained"
+                            sx={{
+                              color: "#FFFFFF",
+                              bgcolor: "#1A1A1A",
+                              height: "45px",
+                              "&:hover": {
+                                bgcolor: "#000000",
+                              },
+                              borderRadius: 2,
+                            }}
+                          >
+                            Save
+                          </Button>
+                        )}
+                      </Form>
+                    )}
+                  </Formik>
+                </CardContent>
+              </Card>
+            </Fragment>
+          )}
+        </CardContent>
+      );
+    } else {
+      return (
+        <CardContent sx={{ my: 2, width: "100%" }}>
+          {isFetching ? (
+            <CircularProgress color="inherit" />
+          ) : booklist && booklist?.length > 0 ? (
+            <Fragment>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexDirection: {
+                    xs: "column",
+                    lg: "row",
+                  },
+                  gap: "20px",
+                  mb: 2,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  placeholder="Search by title or author"
+                  InputProps={{
+                    startAdornment: (
+                      <LuSearch
+                        size={20}
+                        color="rgba(0, 0, 0, 0.4)"
+                        style={{ marginRight: "10px" }}
+                      />
+                    ),
+                  }}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    width: {
+                      xs: "auto",
+                      sm: "100%",
+                    },
+                    justifyContent: "end",
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    onClick={handleAddBook}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      color: "#FFFFFF",
+                      bgcolor: "#1A1A1A",
+                      height: "45px",
+                      "&:hover": {
+                        bgcolor: "#000000",
+                      },
+                      borderRadius: 2,
+                      px: 2,
+                      fontSize: 12,
+                    }}
+                  >
+                    <LuPlus size={18} /> Add book
+                  </Button>
+                </Box>
+              </Box>
+              <Grid container spacing={3}>
+                {booklist?.map((item, i) => (
+                  <Grid item xs={12} sm={6} md={4} key={i}>
+                    <CardActionArea
+                      onClick={() => handleBookDetails(item?.id)}
+                      sx={{ height: "100%" }}
+                    >
+                      <Card
+                        sx={{
+                          padding: "10px !important",
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
+                          height: "100%",
+                          borderRadius: 2,
+                        }}
+                      >
+                        <Box>
+                          <Box
+                            sx={{
+                              height: "150px",
+                              borderRadius: "15px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {item?.imageLink.includes("/uploads/") ? (
+                              <img
+                                src={`http://localhost:5000${item?.imageLink}`}
+                                alt="Book Image"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  backgroundColor: "#0000001A",
+                                }}
+                              />
+                            ) : (
+                              <img
+                                src={item?.imageLink}
+                                alt="Book Image"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  backgroundColor: "#0000001A",
+                                }}
+                              />
+                            )}
+                          </Box>
+                          <Typography
+                            variant="h6"
+                            mt={1.5}
+                            sx={{
+                              overflow: "hidden",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              display: "-webkit-box",
+                              textOverflow: "ellipsis",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {item?.title}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              overflow: "hidden",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              display: "-webkit-box",
+                              textOverflow: "ellipsis",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {item?.author}
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 1,
+                            mt: 1,
+                          }}
+                        >
+                          <Button
+                            fullWidth
+                            onClick={(e) => handleEditBook(e, item?.id)}
+                            sx={{
+                              color: "#FFFFFF",
+                              bgcolor: "#1A1A1A",
+                              height: "45px",
+                              "&:hover": {
+                                bgcolor: "#000000",
+                              },
+                              borderRadius: 2,
+                              fontSize: 12,
+                              gap: 1,
+                            }}
+                          >
+                            <MdEdit size={20} /> Edit
+                          </Button>
+                          <Button
+                            fullWidth
+                            onClick={(e) => handleDeleteBook(e, item?.id)}
+                            sx={{
+                              color: "#FFFFFF",
+                              bgcolor: "#1A1A1A",
+                              height: "45px",
+                              "&:hover": {
+                                bgcolor: "#000000",
+                              },
+                              borderRadius: 2,
+                              fontSize: 12,
+                              gap: 1,
+                            }}
+                          >
+                            <MdDelete size={20} /> Delete
+                          </Button>
+                        </Box>
+                      </Card>
+                    </CardActionArea>
+                  </Grid>
+                ))}
+              </Grid>
+              {booklist && booklist.length > 0 && (
+                <Box
+                  sx={{
+                    my: 5,
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Pagination
+                    renderItem={(item) => (
+                      <PaginationItem
+                        {...item}
+                        page={item.page < 6 ? "0" + item.page : item.page}
+                        onClick={() => {
+                          setPage(item.page);
+                        }}
+                      />
+                    )}
+                    siblingCount={0}
+                    boundaryCount={1}
+                    count={metadata?.totalPages}
+                    page={page}
+                    shape="rounded"
+                    variant="outlined"
+                    onChange={(e, value) => {
+                      setPage(value);
+                    }}
+                    components={{
+                      next: (props) => (
+                        <Button
+                          {...props}
+                          sx={{
+                            fontWeight: 500,
+                            fontSize: "14px !important",
+                            height: "30px !important",
+                            ":hover": {
+                              color: "#FFFFFF",
+                            },
+                          }}
+                        >
+                          Next
+                        </Button>
+                      ),
+                      previous: (props) => (
+                        <Button
+                          {...props}
+                          sx={{
+                            fontWeight: 500,
+                            fontSize: "14px !important",
+                            height: "30px !important",
+                            ":hover": {
+                              color: "#FFFFFF",
+                            },
+                          }}
+                        >
+                          Prev
+                        </Button>
+                      ),
+                    }}
+                  />
+                </Box>
+              )}
+            </Fragment>
+          ) : (
+            <Typography variant="h6" fontWeight={500} align="center">
+              No books available.
+            </Typography>
+          )}
+        </CardContent>
+      );
+    }
+  };
 
   return (
     <Fragment>
@@ -287,7 +768,13 @@ const BookList = () => {
                   color: "black",
                 }}
                 LinkComponent={Link}
-                onClick={() => navigate("/")}
+                onClick={() => {
+                  if (bookDetailsId) {
+                    setBookDetailsId(null);
+                  } else {
+                    navigate("/");
+                  }
+                }}
               >
                 Back
               </Button>
@@ -335,6 +822,7 @@ const BookList = () => {
                 border: "1px solid #0000004D",
                 boxShadow: "0px 0px 20px 0px #00000012",
                 mt: 1,
+                borderRadius: 2,
               }}
             >
               <CardContent
@@ -367,200 +855,7 @@ const BookList = () => {
                   boxShadow: "0px 0px 20px 0px #00000012",
                 }}
               />
-              <CardContent sx={{ my: 2, width: "100%" }}>
-                {isFetching ? (
-                  <CircularProgress color="inherit" />
-                ) : booklist && booklist?.length > 0 ? (
-                  <Fragment>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        flexDirection: {
-                          xs: "column",
-                          lg: "row",
-                        },
-                        gap: "20px",
-                        mb: 2,
-                      }}
-                    >
-                      <TextField
-                        fullWidth
-                        placeholder="Search by title or author"
-                        InputProps={{
-                          startAdornment: (
-                            <LuSearch
-                              size={20}
-                              color="rgba(0, 0, 0, 0.4)"
-                              style={{ marginRight: "10px" }}
-                            />
-                          ),
-                        }}
-                        onChange={(e) => setSearch(e.target.value)}
-                      />
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "10px",
-                          width: {
-                            xs: "auto",
-                            sm: "100%",
-                          },
-                          justifyContent: "end",
-                        }}
-                      >
-                        <Button
-                          variant="contained"
-                          onClick={handleAddBook}
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            color: "#FFFFFF",
-                            bgcolor: "#1A1A1A",
-                            height: "45px",
-                            "&:hover": {
-                              bgcolor: "#000000",
-                            },
-                            borderRadius: 2,
-                            px: 2,
-                            fontSize: 12,
-                          }}
-                        >
-                          <LuPlus size={18} /> Add book
-                        </Button>
-                      </Box>
-                    </Box>
-                    <Grid container spacing={3}>
-                      {booklist?.map((item, i) => (
-                        <Grid item xs={12} sm={6} md={4} key={i}>
-                          <Card
-                            sx={{
-                              padding: "10px !important",
-                              display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "space-between",
-                              height: "100%",
-                              borderRadius: 2,
-                            }}
-                          >
-                            <Box>
-                              <Box
-                                sx={{
-                                  height: "150px",
-                                  borderRadius: "15px",
-                                  overflow: "hidden",
-                                }}
-                              >
-                                {item?.imageLink.includes("/uploads/") ? (
-                                  <img
-                                    src={`http://localhost:5000${item?.imageLink}`}
-                                    alt="Book Image"
-                                    style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "cover",
-                                      backgroundColor: "#0000001A",
-                                    }}
-                                  />
-                                ) : (
-                                  <img
-                                    src={item?.imageLink}
-                                    alt="Book Image"
-                                    style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "cover",
-                                      backgroundColor: "#0000001A",
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                              <Typography
-                                variant="h6"
-                                mt={1.5}
-                                sx={{
-                                  overflow: "hidden",
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical",
-                                  display: "-webkit-box",
-                                  textOverflow: "ellipsis",
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                {item?.title}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  overflow: "hidden",
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical",
-                                  display: "-webkit-box",
-                                  textOverflow: "ellipsis",
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                {item?.author}
-                              </Typography>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                gap: 1,
-                                mt: 1,
-                              }}
-                            >
-                              <Button
-                                fullWidth
-                                onClick={() => handleEditBook(item?.id)}
-                                sx={{
-                                  color: "#FFFFFF",
-                                  bgcolor: "#1A1A1A",
-                                  height: "45px",
-                                  "&:hover": {
-                                    bgcolor: "#000000",
-                                  },
-                                  borderRadius: 2,
-                                  fontSize: 12,
-                                  gap: 1,
-                                }}
-                              >
-                                <MdEdit size={20} /> Edit
-                              </Button>
-                              <Button
-                                fullWidth
-                                onClick={() => handleDeleteBook(item?.id)}
-                                sx={{
-                                  color: "#FFFFFF",
-                                  bgcolor: "#1A1A1A",
-                                  height: "45px",
-                                  "&:hover": {
-                                    bgcolor: "#000000",
-                                  },
-                                  borderRadius: 2,
-                                  fontSize: 12,
-                                  gap: 1,
-                                }}
-                              >
-                                <MdDelete size={20} /> Delete
-                              </Button>
-                            </Box>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Fragment>
-                ) : (
-                  <Typography variant="h6" fontWeight={500} align="center">
-                    No books available.
-                  </Typography>
-                )}
-              </CardContent>
+              {renderBookDetails()}
             </Card>
           </Fragment>
         )}
@@ -643,7 +938,7 @@ const BookList = () => {
         fullWidth
       >
         <DialogContent>
-          <form onSubmit={formik.handleSubmit}>
+          <form onSubmit={editformik.handleSubmit}>
             <Box>
               <InputLabel htmlFor="imageLink">
                 Image
@@ -707,7 +1002,7 @@ const BookList = () => {
                   </Box>
                 )}
               </label>
-              {formik.errors.image && formik.touched.image && (
+              {editformik.errors.image && editformik.touched.image && (
                 <Typography
                   mt="3px"
                   fontSize="0.75rem"
@@ -716,7 +1011,7 @@ const BookList = () => {
                   ml={1}
                   display="block"
                 >
-                  {formik.errors.image}
+                  {editformik.errors.image}
                 </Typography>
               )}
               <Snackbar
@@ -745,10 +1040,12 @@ const BookList = () => {
                 name="title"
                 type="text"
                 placeholder="Enter title"
-                value={formik.values.title}
-                onChange={formik.handleChange}
-                error={formik.touched.title && Boolean(formik.errors.title)}
-                helperText={formik.touched.title && formik.errors.title}
+                value={editformik.values.title}
+                onChange={editformik.handleChange}
+                error={
+                  editformik.touched.title && Boolean(editformik.errors.title)
+                }
+                helperText={editformik.touched.title && editformik.errors.title}
               />
               <InputLabel
                 htmlFor="author"
@@ -768,10 +1065,14 @@ const BookList = () => {
                 name="author"
                 type="text"
                 placeholder="Enter author"
-                value={formik.values.author}
-                onChange={formik.handleChange}
-                error={formik.touched.author && Boolean(formik.errors.author)}
-                helperText={formik.touched.author && formik.errors.author}
+                value={editformik.values.author}
+                onChange={editformik.handleChange}
+                error={
+                  editformik.touched.author && Boolean(editformik.errors.author)
+                }
+                helperText={
+                  editformik.touched.author && editformik.errors.author
+                }
               />
             </Box>
             <Box
@@ -828,6 +1129,53 @@ const BookList = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Menu
+        id="mouse-over-popover-menu"
+        anchorEl={anchorElMenu}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        keepMounted
+        open={Boolean(anchorElMenu)}
+        onClose={handleCloseMenu}
+        disableRestoreFocus
+        slotProps={{
+          paper: {
+            style: {
+              width: "140px",
+              marginTop: "10px",
+            },
+          },
+        }}
+        disableAutoFocus
+        disableAutoFocusItem
+        MenuListProps={{
+          onMouseLeave: handleCloseMenu,
+        }}
+      >
+        <MenuItem
+          selected={false}
+          onClick={handleEditMenu}
+          sx={{ justifyContent: "left", gap: 1, fontWeight: 500, fontSize: 14 }}
+        >
+          <MdEdit size={20} /> Edit
+        </MenuItem>
+        <Divider variant="middle" />
+        <MenuItem
+          selected={false}
+          onClick={(e) => handleDeleteBook(e, bookDetailsId)}
+          sx={{ justifyContent: "left", gap: 1, fontWeight: 500, fontSize: 14 }}
+        >
+          <MdDelete size={20} />
+          Delete
+        </MenuItem>
+      </Menu>
     </Fragment>
   );
 };
