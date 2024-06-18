@@ -150,23 +150,33 @@ const upload = multer({ storage: storage });
 
 // get all books with search parameter
 app.get("/books", (req, res) => {
-  const { search } = req.query;
+  const { search, page = 1, limit = 6 } = req.query;
+
+  let filteredBooks = books;
 
   if (search) {
-    const filteredBooks = books.filter(
+    filteredBooks = books.filter(
       (book) =>
         book.title.toLowerCase().includes(search.toLowerCase()) ||
         book.author.toLowerCase().includes(search.toLowerCase())
     );
-
-    if (filteredBooks.length > 0) {
-      res.json(filteredBooks);
-    } else {
-      res.status(404).json({ error: "No books found" });
-    }
-  } else {
-    res.json(books);
   }
+
+  const totalItems = filteredBooks.length;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  const paginatedBooks = filteredBooks.slice(startIndex, endIndex);
+
+  res.json({
+    data: paginatedBooks,
+    metadata: {
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: parseInt(page),
+      itemsPerPage: parseInt(limit),
+    },
+  });
 });
 
 // get particular book details
@@ -192,12 +202,19 @@ app.post("/books", upload.single("imageLink"), (req, res) => {
 
 // edit book
 app.put("/books/:id", upload.single("imageLink"), (req, res) => {
-  const { title, author } = req.body;
+  const { title, author, country, pages, year, languages } = req.body;
   const bookId = parseInt(req.params.id);
   const bookIndex = books.findIndex((b) => b.id === bookId);
 
   if (bookIndex !== -1) {
-    const updatedBook = { ...books[bookIndex], title, author };
+    const updatedBook = { ...books[bookIndex] };
+
+    if (title) updatedBook.title = title;
+    if (author) updatedBook.author = author;
+    if (country) updatedBook.country = country;
+    if (pages) updatedBook.pages = parseInt(pages);
+    if (year) updatedBook.year = parseInt(year);
+    if (languages) updatedBook.languages = JSON.parse(languages);
 
     const existingImageLink = books[bookIndex].imageLink;
 
@@ -207,6 +224,7 @@ app.put("/books/:id", upload.single("imageLink"), (req, res) => {
 
     books[bookIndex] = updatedBook;
 
+    // Delete the old image file if a new one is uploaded and the old one isn't the default image
     if (
       req.file &&
       existingImageLink &&
