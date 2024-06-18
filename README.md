@@ -4,6 +4,7 @@
 - Built with [React](https://react.dev/), [MUI](https://mui.com/), [Node.js](https://nodejs.org/), and [Express](https://expressjs.com/). 
 - Supports Google and Discord login.
 - Includes search functionality to easily find books.
+- Enables full CRUD operations (Create, Read, Update, Delete) for efficient book management.
 
 ## Screenshots
 **Login Page**
@@ -15,6 +16,18 @@
 **Home Page**
 
 <img width="1295" alt="Screenshot 2024-06-17 at 9 37 28 PM" src="https://github.com/AbhiVarde/Librarium/assets/91776428/169b5d43-5cd0-410a-af58-b3c52d426a6a">
+
+---
+
+**Book Details Page**
+
+<img width="1219" alt="Screenshot 2024-06-18 at 3 47 25 PM" src="https://github.com/AbhiVarde/Librarium/assets/91776428/0ba1e120-417a-490a-a8a4-213a8b4ec32b">
+
+---
+
+**Edit Book Details Page**
+
+<img width="1181" alt="Screenshot 2024-06-18 at 3 47 55 PM" src="https://github.com/AbhiVarde/Librarium/assets/91776428/db339ed9-4873-4ae2-a390-688fae70adba">
 
 ---
 
